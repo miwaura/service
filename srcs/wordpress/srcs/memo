@@ -1,0 +1,13 @@
+やりたいこと
+marinadbのコンテナとwordpress,ninx,phpmyadminが入ったコンテナがあります。
+phpmyadminを動かしたいです。
+phpmyadminにログインすることはできましたが
+管理画面で200のエラーと500のエラーが表示されている状態です。
+試したこと
+設定ファイルの問題と考えました。
+confing.inc.php
+controluser 'dbuser'
+controlpass 'password'に変更
+ー＞phpmyadmin自体もひらけなくなる
+その後設定を戻しても、アクセスできなくなる　HTTP500
+
