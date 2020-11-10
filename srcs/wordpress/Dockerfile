@@ -45,6 +45,8 @@ RUN cd /usr/share/webapps && wget http://files.directadmin.com/services/all/phpM
 RUN chmod -R 777 /usr/share/webapps/
 RUN ln -s /usr/share/webapps/phpmyadmin/ /var/www/localhost/htdocs/phpmyadmin
 COPY ./srcs/config.inc.php /usr/share/webapps/phpmyadmin/config.inc.php
+# 変更点
+RUN sed -i -e 's/memory_limit =/memory_limit = -1/g' etc/php7/php.ini
 # phpmyadmin user data がないと動かない
 RUN chmod 777 /tmp/start.sh
 CMD ["/tmp/start.sh"]
