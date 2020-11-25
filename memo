@@ -3,6 +3,9 @@ nginxコンテナで.phpを表示させたい
 path
 root /var/lib/nginx/html/test/index.php
 
+docker build -t nginx-test nginx
+docker-compose up -d
+
 現状
 web画面
 　File not found.
@@ -54,6 +57,7 @@ COPY ./srcs/www.conf /etc/php7/php-fpm.d/www.conf
 
 結果
 No input file specified.
+->ここまでをDockerfileに反映しました。
 
 3,
 https://stackoverflow.com/questions/21377321/nginx-no-input-file-specified-php-fast-cgi
