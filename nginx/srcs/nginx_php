@@ -1,0 +1,99 @@
+やりたいこと
+nginxコンテナで.phpを表示させたい
+path
+root /var/lib/nginx/html/test/index.php
+
+現状
+web画面
+　File not found.
+/var/log/nginx/error.log
+　2020/11/25 04:12:25 [error] 626#626: *3 FastCGI sent in stderr: "Primary script unknown" while reading response header from upstream, client: 172.18.0.1, server: _, request: "GET /test/ HTTP/1.1", upstream: "fastcgi://127.0.0.1:9000", host: "localhost"
+htmlファイルを同じpathに置くとhtmlファイルが表示される。
+
+docker build -t nginx-test nginx
+
+試したこと
+1,
+nginxのdefault.confの変更
+ location ~ \.php$ {
+                try_files $uri =404;
+                include fastcgi.conf;
+                include /etc/nginx/fastcgi_params;
+                fastcgi_pass 127.0.0.1:9000;
+                追加->index index.html index.htm index.nginx-debian.html index.php;
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                fastcgi_index index.php;
+                fastcgi_read_timeout 3600s;
+                fastcgi_buffer_size 128k;
+                fastcgi_buffers 4 128k;
+                # fastcgi_pass unix:/run/php/php7.3-fpm.sock;
+ }
+結果
+    変化なし
+2,
+wordpressが動いているコンテナと同じモジュール、設定を行う。
+apk add php7-fpm php7-mcrypt php7-soap \
+php7-openssl php7-gmp php7-pdo_odbc php7-json \
+php7-dom php7-pdo php7-zip php7-mysqli php7-sqlite3 \
+php7-apcu php7-pdo_pgsql php7-bcmath php7-gd php7-odbc \
+php7-pdo_mysql php7-pdo_sqlite php7-gettext php7-xmlreader \
+php7-xmlrpc php7-bz2 php7-iconv php7-pdo_dblib php7-curl php7-ctype php7-session php7-mbstring
+export PHP_FPM_USER="www" \
+&& export PHP_FPM_GROUP="www" \
+&& export PHP_FPM_LISTEN_MODE="0660" \
+&& export PHP_MEMORY_LIMIT="512M" \
+&& export PHP_MAX_UPLOAD="50M" \
+&& export PHP_MAX_FILE_UPLOAD="200" \
+&& export PHP_MAX_POST="100M" \
+&& export PHP_DISPLAY_ERRORS="On" \
+&& export PHP_DISPLAY_STARTUP_ERRORS="On" \
+&& export PHP_ERROR_REPORTING="E_COMPILE_ERROR\|E_RECOVERABLE_ERROR\|E_ERROR\|E_CORE_ERROR" \
+&& export PHP_CGI_FIX_PATHINFO=0
+sed -i "s|;listen.owner\s*=\s*nobody|listen.owner = ${PHP_FPM_USER}|g" /etc/php7/php-fpm.d/www.conf && sed -i "s|;listen.group\s*=\s*nobody|listen.group = ${PHP_FPM_GROUP}|g" /etc/php7/php-fpm.d/www.conf && sed -i "s|;listen.mode\s*=\s*0660|listen.mode = ${PHP_FPM_LISTEN_MODE}|g" /etc/php7/php-fpm.d/www.conf && sed -i "s|user\s*=\s*nobody|user = ${PHP_FPM_USER}|g" /etc/php7/php-fpm.d/www.conf && sed -i "s|group\s*=\s*nobody|group = ${PHP_FPM_GROUP}|g" /etc/php7/php-fpm.d/www.conf && sed -i "s|;log_level\s*=\s*notice|log_level = notice|g" /etc/php7/php-fpm.d/www.conf #uncommenting line 
+sed -i "s|display_errors\s*=\s*Off|display_errors = ${PHP_DISPLAY_ERRORS}|i" /etc/php7/php.ini && sed -i "s|display_startup_errors\s*=\s*Off|display_startup_errors = ${PHP_DISPLAY_STARTUP_ERRORS}|i" /etc/php7/php.ini && sed -i "s|error_reporting\s*=\s*E_ALL & ~E_DEPRECATED & ~E_STRICT|error_reporting = ${PHP_ERROR_REPORTING}|i" /etc/php7/php.ini && sed -i "s|;*memory_limit =.*|memory_limit = ${PHP_MEMORY_LIMIT}|i" /etc/php7/php.ini && sed -i "s|;*upload_max_filesize =.*|upload_max_filesize = ${PHP_MAX_UPLOAD}|i" /etc/php7/php.ini && sed -i "s|;*max_file_uploads =.*|max_file_uploads = ${PHP_MAX_FILE_UPLOAD}|i" /etc/php7/php.ini && sed -i "s|;*post_max_size =.*|post_max_size = ${PHP_MAX_POST}|i" /etc/php7/php.ini && sed -i "s|;*cgi.fix_pathinfo=.*|cgi.fix_pathinfo= ${PHP_CGI_FIX_PATHINFO}|i" /etc/php7/php.ini
+adduser -D -g 'www' www
+COPY ./srcs/www.conf /etc/php7/php-fpm.d/www.conf
+
+結果
+No input file specified.
+
+ここまでをdockerfileに反映
+
+3,
+https://stackoverflow.com/questions/21377321/nginx-no-input-file-specified-php-fast-cgi
+location ~ \.$php{
+  #......
+  include fastcgi.conf;
+}
+の追加
+結果
+変化なし
+
+4,
+https://mjhd.hatenablog.com/entry/nginx-and-php-fpm-always-say-no
+php.iniに、open_basedirという設定項目があるのだが、そこにデフォルトで存在しないパスが書かれていた。
+ここをコメントアウトしたところまともに動くようになった。
+->もともとコメントアウトしてあり、関係がなかった。
+
+5,
+https://omiyan.hatenadiary.org/entry/20110119/p1
+fastcgi_param SCRIPT_FILENAME /path/php/application$fastcgi_script_name;
+に変更
+結果
+変化なし
+
+6,
+かみやさんに質問した。
+権限の問題だった。
+ps
+www       0:00 {php-fpm7} php-fpm: pool www
+www       0:00 {php-fpm7} php-fpm: pool www
+php-fpmのユーザーはwwwだった
+
+var/lib/nginx
+drwxr-x---    1 nginx    nginx
+d 1.rwx 2.r-x 3.---    1（ハードリンクの数） 1.nginx    2.nginx
+1.のrwxはnginx＝ユーザーの権限
+2.のr-xはnginx＝グループの権限
+3.はその他のユーザーの権限
+つまりphp-fpm=wwwはvar/lib/nginxに対して権限がなくファイルを読み込むことができなかった。

@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+    # ftps:
+    #     image: ftps
+    #     container_name: ftps
+    #     ports:
+    #         - 20:20
+    #         - 21:21
+    #     restart: always
+        
+    nginx:
+        image: nginx-test
+        container_name: nginx-test
+        ports:
+            - 8080:80
+            - 443:443
+        restart: always
+
+    db:
+        image: mysql-con
+        container_name: mysql-con
+        restart: always
+        
+    wordpress:
+        image: wp
+        container_name: wp
+        ports:
+            - 5050:80
+            # - 8080:80
+        depends_on:
+            - db
+        restart: always
+
+    phpmyadmin:
+        image: py
+        container_name: py
+        ports:
+            - 5000:80
+    
+    # in:
+    #     image: in
+    #     container_name: in
+    #     ports:
+    #         - 8086:8086
+    #         - 8083:8083
+    #     restart: always
+    #     depends_on:
+    #         - gg
+        
+    # gg:
+    #     image: gg
+    #     container_name: gg
+    #     ports:
+    #         - 3000:3000
+    #     restart: always
