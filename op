@@ -1,0 +1,14 @@
+起動前
+docker build -t mysql-con mysql
+docker build -t nginx-test nginx
+docker build -t py phpmyadmin/
+docker build -t wp wordpress/
+docker-compose up -d
+
+起動後
+localhost:8080
++/phpmyadmin/ ->phpmyadminコンテナのnginx pageを表示
++/phpmyadmin/ ->phpmyadminのログイン画面を表示
+ユーザー名: dbuser
+パスワード: password
+->not found
