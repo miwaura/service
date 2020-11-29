@@ -3,8 +3,10 @@ nginx reverse proxyでphpmyadminにアクセス
 
 現状
 http://localhost:5000/phpmyadmin/index.php
-であればアクセスできる
-ログインできる
+直接コンテナにアクセスする場合、
+phpmyadminに
+ログインでき、DBの情報を見ることができる
+
 https://localhost/phpmyadmin/phpmyadmin/index.php
 nginxコンテナからreverse proxyだと
 phpmyadminのログイン画面までは表示される
@@ -15,7 +17,7 @@ not found　404
 試したこと
 1,nginxコンテナ
 グローバルスラックにて
-/etc/nginx/conf.d/default.conf
+/etc/nginx/conf.d/default.confに
 
 location /phpmyadmin {
      ~
@@ -30,7 +32,7 @@ location /phpmyadmin {
 
 2,nignxコンテナ
 https://teratail.com/questions/43399
-/etc/nginx/conf.d/default.conf
+/etc/nginx/conf.d/default.conf　に
 fastcgi_split_path_info  ^/phpMyAdmin/(.+\.php)(.*)$; 
 を追加
 ->変化なし
@@ -42,3 +44,52 @@ rootの
 chmod 777 *
 設定ファイルのパーミッションが正しくありません。誰でも書き込み可能になっています！
 となり、ログインページが表示されなくなる
+
+4,
+phpmyadminにログインした時
+nginxコンテナのアクセスログ
+/var/log/nginx/access.log
+172.22.0.1 - - [29/Nov/2020:01:52:43 +0000] "POST /phpmyadmin/phpmyadmin/index.php HTTP/1.1" 404 548 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36"
+phpmyadminコンテナのアクセスログは更新されず
+
+nginx,phpmyadminどちらのエラ〜ログも空
+
+phpmyadminコンテナに直接アクセスしてログインした際のアクセスログ
+/var/log/nginx/access.log
+172.22.0.1 - - [29/Nov/2020:01:58:23 +0000] "POST /phpmyadmin/index.php HTTP/1.1" 302 31 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:23 +0000] "GET /phpmyadmin/index.php HTTP/1.1" 200 15734 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:23 +0000] "GET /phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1 HTTP/1.1" 200 100397 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:23 +0000] "GET /phpmyadmin/themes/pmahomme/img/logo_left.png HTTP/1.1" 200 2713 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:23 +0000] "GET /phpmyadmin/themes/pmahomme/img/left_nav_bg.png HTTP/1.1" 200 146 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:23 +0000] "GET /phpmyadmin/themes/pmahomme/img/b_home.png HTTP/1.1" 200 734 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:23 +0000] "GET /phpmyadmin/themes/pmahomme/img/s_loggoff.png HTTP/1.1" 200 626 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:23 +0000] "GET /phpmyadmin/themes/pmahomme/img/b_docs.png HTTP/1.1" 200 705 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:23 +0000] "GET /phpmyadmin/themes/pmahomme/img/s_cog.png HTTP/1.1" 200 442 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:23 +0000] "GET /phpmyadmin/themes/pmahomme/img/b_sqlhelp.png HTTP/1.1" 200 512 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:23 +0000] "GET /phpmyadmin/themes/pmahomme/img/s_reload.png HTTP/1.1" 200 527 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:23 +0000] "GET /phpmyadmin/themes/pmahomme/img/b_plus.png HTTP/1.1" 200 143 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:23 +0000] "GET /phpmyadmin/themes/pmahomme/img/s_db.png HTTP/1.1" 200 328 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:23 +0000] "GET /phpmyadmin/themes/pmahomme/img/s_link.png HTTP/1.1" 200 280 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/s_host.png HTTP/1.1" 200 591 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/b_export.png HTTP/1.1" 200 514 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/s_status.png HTTP/1.1" 200 600 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/b_sql.png HTTP/1.1" 200 680 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/b_import.png HTTP/1.1" 200 556 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/s_vars.png HTTP/1.1" 200 523 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/b_tblops.png HTTP/1.1" 200 537 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/b_engine.png HTTP/1.1" 200 398 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/s_asci.png HTTP/1.1" 200 148 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/b_plugin.png HTTP/1.1" 200 512 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/s_top.png HTTP/1.1" 200 220 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/console.png HTTP/1.1" 200 292 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/s_passwd.png HTTP/1.1" 200 331 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/s_lang.png HTTP/1.1" 200 659 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/s_theme.png HTTP/1.1" 200 772 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/window-new.png HTTP/1.1" 200 468 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/s_notice.png HTTP/1.1" 200 567 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "POST /phpmyadmin/ajax.php HTTP/1.1" 200 1463 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "GET /phpmyadmin/themes/pmahomme/img/b_more.png HTTP/1.1" 200 111 "http://localhost:5000/phpmyadmin/themes/pmahomme/css/theme.css?v=5.0.2&nocache=6382589158ltr&server=1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "POST /phpmyadmin/navigation.php?ajax_request=1 HTTP/1.1" 200 2128 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:24 +0000] "POST /phpmyadmin/ajax.php HTTP/1.1" 200 1557 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:25 +0000] "POST /phpmyadmin/ajax.php HTTP/1.1" 200 1455 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
+172.22.0.1 - - [29/Nov/2020:01:58:25 +0000] "POST /phpmyadmin/version_check.php HTTP/1.1" 200 73 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36" "-"
